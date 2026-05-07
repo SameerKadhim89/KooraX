@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "notification": {
+      "title": "Notification",
+      "description": "A notification message for a match event.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "matchId": { "type": "string" },
+        "type": { "type": "string", "enum": ["start", "goal", "finish"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" },
+        "userId": { "type": "string" }
+      },
+      "required": ["title", "body", "type", "timestamp", "userId"]
+    },
+    "userSetting": {
+      "title": "User Setting",
+      "description": "User preferences for notifications.",
+      "type": "object",
+      "properties": {
+        "notificationsEnabled": { "type": "boolean" },
+        "goalNotifications": { "type": "boolean" },
+        "matchStartNotifications": { "type": "boolean" },
+        "matchFinishNotifications": { "type": "boolean" }
+      },
+      "required": ["notificationsEnabled"]
+    }
+  },
+  "firestore": {
+    "/notifications/{notificationId}": {
+      "schema": "notification",
+      "description": "Collection of user notifications."
+    },
+    "/userSettings/{userId}": {
+      "schema": "userSetting",
+      "description": "User notification preferences."
+    }
+  }
+}
