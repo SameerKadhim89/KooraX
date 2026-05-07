@@ -13,6 +13,7 @@ import { db, auth, loginWithGoogle } from './lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, limit, addDoc, serverTimestamp, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { AdBanner } from './components/AdBanner';
+import { showInterstitial, initializeAdMob } from './services/admob';
 
 type Tab = 'matches' | 'highlights' | 'transfers' | 'standings';
 
@@ -630,6 +631,10 @@ export default function App() {
   }, [subscribedLeagues]);
 
   useMatchNotifications(subscribedTeams, subscribedLeagues);
+
+  useEffect(() => {
+    initializeAdMob();
+  }, []);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -1261,7 +1266,10 @@ function MatchesView({
               {(leagueMatches as Match[]).map(match => (
                 <div 
                   key={match.id} 
-                  onClick={() => setSelectedMatch(match)}
+                  onClick={() => {
+                    showInterstitial();
+                    setSelectedMatch(match);
+                  }}
                   className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shadow-sm dark:shadow-none cursor-pointer relative"
                 >
                   <button 

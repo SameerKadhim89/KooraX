@@ -39,15 +39,15 @@ export function AdBanner({ adId }: AdBannerProps) {
   const showBanner = async () => {
     try {
       const defaultAdId = Capacitor.getPlatform() === 'ios'
-        ? 'ca-app-pub-3940256099942544/2934735716' // Test iOS Banner
-        : 'ca-app-pub-3940256099942544/6300978111'; // Test Android Banner
+        ? 'ca-app-pub-2757007936976677/1623886086' // Update iOS if available, using Android for now
+        : 'ca-app-pub-2757007936976677/1623886086'; // Production Android Banner
 
       await AdMob.showBanner({
         adId: adId || defaultAdId,
         adSize: BannerAdSize.ADAPTIVE_BANNER,
         position: BannerAdPosition.BOTTOM_CENTER,
         margin: 0,
-        isTesting: true, // Set to false in production!
+        isTesting: false, // Set to false in production!
       });
       setIsAdLoaded(true);
     } catch (error) {
