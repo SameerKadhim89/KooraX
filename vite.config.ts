@@ -22,14 +22,14 @@ export default defineConfig(({mode}) => {
           orientation: 'portrait',
           icons: [
             {
-              src: 'https://api.dicebear.com/7.x/initials/svg?seed=FH&backgroundColor=059669&fontFamily=Arial&fontWeight=700',
+              src: '/logo.png',
               sizes: '192x192',
-              type: 'image/svg+xml'
+              type: 'image/png'
             },
             {
-              src: 'https://api.dicebear.com/7.x/initials/svg?seed=FH&backgroundColor=059669&fontFamily=Arial&fontWeight=700',
+              src: '/logo.png',
               sizes: '512x512',
-              type: 'image/svg+xml'
+              type: 'image/png'
             }
           ]
         }

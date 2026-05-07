@@ -670,11 +670,8 @@ export default function App() {
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="relative w-10 h-10 flex items-center justify-center group">
-              <div className="absolute inset-0 bg-emerald-500/20 rounded-lg rotate-12 transition-transform group-hover:rotate-45"></div>
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg -rotate-6 transition-transform group-hover:rotate-0 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                <span className="text-white font-black text-xl italic drop-shadow-md">X</span>
-              </div>
+            <div className="relative w-12 h-12 flex items-center justify-center group">
+              <img src="/logo.png" alt="KooraX Logo" className="w-full h-full object-cover rounded-2xl shadow-lg shadow-emerald-500/20 transition-transform group-hover:scale-105" />
             </div>
             <div className="flex flex-col">
               <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">KOORA<span className="text-emerald-500 italic">X</span></h1>
