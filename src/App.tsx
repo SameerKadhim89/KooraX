@@ -13,6 +13,11 @@ import { db, auth, loginWithGoogle } from './lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, limit, addDoc, serverTimestamp, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { AdBanner } from './components/AdBanner';
+import { showInterstitial, initializeAdMob } from './services/admob';
+import { fetchLiveMatches, fetchLiveStandings, fetchLiveHighlights } from './services/api';
+import { Capacitor } from '@capacitor/core';
+
+export const API_BASE = import.meta.env.VITE_API_URL || (Capacitor.isNativePlatform() ? 'http://192.168.100.9:3000' : '');
 
 type Tab = 'matches' | 'highlights' | 'transfers' | 'standings';
 
