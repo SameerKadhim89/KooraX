@@ -12,6 +12,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { db, auth, loginWithGoogle } from './lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, limit, addDoc, serverTimestamp, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { AdBanner } from './components/AdBanner';
 
 type Tab = 'matches' | 'highlights' | 'transfers' | 'standings';
 
@@ -715,6 +716,7 @@ export default function App() {
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto px-4 py-6">
+        <AdBanner />
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
