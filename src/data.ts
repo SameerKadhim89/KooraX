@@ -74,15 +74,11 @@ export interface MatchEvent {
   playerName?: string;
 }
 
+import { API_BASE } from './App';
+import { fetchLiveMatchDetails } from './services/api';
+
 export const fetchMatchDetails = async (matchId: string): Promise<{stats?: MatchStats, events: MatchEvent[]}> => {
-  try {
-    const response = await fetch(`/api/matches/${matchId}/details`);
-    if (!response.ok) throw new Error("Failed to fetch match details");
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching match details:", error);
-    return { events: [] };
-  }
+  return await fetchLiveMatchDetails(matchId);
 };
 
 import { leagueLogos, teamLogos, leagueLinks } from './logos';

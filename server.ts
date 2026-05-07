@@ -1,5 +1,6 @@
 console.log("Server file loaded");
 import express from "express";
+import cors from "cors";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import Parser from "rss-parser";
@@ -143,6 +144,7 @@ async function startServer() {
   checkMatchUpdates();
   const PORT = 3000;
   const app = express();
+  app.use(cors());
 
   // API routes FIRST
   app.get("/api/health", (req, res) => {

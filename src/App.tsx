@@ -13,7 +13,6 @@ import { db, auth, loginWithGoogle } from './lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, limit, addDoc, serverTimestamp, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { AdBanner } from './components/AdBanner';
-import { showInterstitial, initializeAdMob } from './services/admob';
 
 type Tab = 'matches' | 'highlights' | 'transfers' | 'standings';
 
@@ -55,7 +54,7 @@ function NotificationCenter() {
         id: doc.id,
         ...doc.data()
       })) as Notification[];
-      
+
       setNotifications(newNotifs);
       setUnreadCount(newNotifs.filter(n => !n.read).length);
 
@@ -131,7 +130,7 @@ function NotificationCenter() {
                   الإشعارات الذكية
                 </h3>
                 {!user && (
-                  <button 
+                  <button
                     onClick={() => { loginWithGoogle(); setIsOpen(false); }}
                     className="text-[10px] font-bold text-emerald-500 hover:underline"
                   >
@@ -139,7 +138,7 @@ function NotificationCenter() {
                   </button>
                 )}
               </div>
-              
+
               <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide py-2">
                 {notifications.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 opacity-40">
@@ -148,19 +147,18 @@ function NotificationCenter() {
                   </div>
                 ) : (
                   notifications.map((notif) => (
-                    <div 
-                      key={notif.id} 
+                    <div
+                      key={notif.id}
                       className={`px-4 py-3 border-b border-slate-50 dark:border-slate-800/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors ${!notif.read ? 'bg-emerald-500/5' : ''}`}
                     >
                       <div className="flex gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                          notif.type === 'goal' ? 'bg-emerald-500/10 text-emerald-500' :
-                          notif.type === 'start' ? 'bg-blue-500/10 text-blue-500' :
-                          'bg-slate-500/10 text-slate-500'
-                        }`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${notif.type === 'goal' ? 'bg-emerald-500/10 text-emerald-500' :
+                            notif.type === 'start' ? 'bg-blue-500/10 text-blue-500' :
+                              'bg-slate-500/10 text-slate-500'
+                          }`}>
                           {notif.type === 'goal' ? <Goal className="w-4 h-4" /> :
-                           notif.type === 'start' ? <Activity className="w-4 h-4" /> :
-                           <Clock className="w-4 h-4" />}
+                            notif.type === 'start' ? <Activity className="w-4 h-4" /> :
+                              <Clock className="w-4 h-4" />}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-black text-slate-900 dark:text-white group-hover:text-emerald-500">{notif.title}</p>
@@ -199,14 +197,14 @@ function StandingsView() {
     if (!silent) setIsLoading(true);
     else setIsRefreshing(true);
     setError(null);
-    
+
     try {
-      const endpoint = `/api/standings?league=${encodeURIComponent(activeLeagueFilter)}`;
+      const endpoint = `${API_BASE}/api/standings?league=${encodeURIComponent(activeLeagueFilter)}`;
       const response = await fetch(endpoint);
       if (response.ok) {
         const data = await response.json();
         console.log("Standings data:", data);
-        
+
         if (data.isGrouped) {
           setIsGrouped(true);
           setGroupedStandings(data.groupedStandings || {});
@@ -216,7 +214,7 @@ function StandingsView() {
           setGroupedStandings(null);
           setStandings(Array.isArray(data.standings) ? data.standings : []);
         }
-        
+
         // Use API logo if available, otherwise fallback to our local logos
         setLeagueLogoUrl(data.leagueLogo || getLeagueLogo(activeLeagueFilter) || leagueLogos[activeLeagueFilter] || null);
       } else {
@@ -235,11 +233,11 @@ function StandingsView() {
 
   useEffect(() => {
     fetchStandings();
-    
+
     const interval = setInterval(() => {
       fetchStandings(true);
     }, 60000);
-    
+
     return () => clearInterval(interval);
   }, [activeLeagueFilter]);
 
@@ -275,14 +273,14 @@ function StandingsView() {
                 <td className="px-4 py-4 font-bold text-slate-400 text-center">{index + 1}</td>
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-3">
-                    <TeamLogo 
+                    <TeamLogo
                       team={{
                         id: team.team.id,
                         name: team.team.displayName,
                         logo: team.team.logos?.[0]?.href,
                         color: 'bg-slate-100',
                         textColor: 'text-slate-400'
-                      }} 
+                      }}
                       className="w-8 h-8"
                     />
                     <span className="font-bold text-slate-900 dark:text-white truncate max-w-[150px]">{team.team.displayName || team.team.name || 'غير معروف'}</span>
@@ -323,11 +321,10 @@ function StandingsView() {
           <button
             key={league}
             onClick={() => setActiveLeagueFilter(league)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all border ${
-              activeLeagueFilter === league 
-                ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/30' 
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all border ${activeLeagueFilter === league
+                ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/30'
                 : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-500/50'
-            }`}
+              }`}
           >
             <LeagueLogo league={league} className="w-4 h-4" />
             {league}
@@ -353,7 +350,7 @@ function StandingsView() {
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{isGrouped ? 'مجموعات البطولة' : 'جدول الترتيب المباشر'}</p>
         </div>
       </div>
-      
+
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-500 dark:text-slate-400">
           <RefreshCw className="w-8 h-8 animate-spin mb-4 text-emerald-500" />
@@ -382,7 +379,7 @@ function StandingsView() {
           ) : (
             renderTable(standings)
           )}
-          
+
           <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
             <span>المصدر: ESPN & TSDB</span>
             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
@@ -477,11 +474,10 @@ function NotificationSettingsModal({
                 <button
                   key={league}
                   onClick={() => toggleLeague(league)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
-                    subscribedLeagues.includes(league)
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${subscribedLeagues.includes(league)
                       ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20'
                       : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-500/50'
-                  }`}
+                    }`}
                 >
                   {league}
                 </button>
@@ -499,11 +495,10 @@ function NotificationSettingsModal({
                 <button
                   key={team}
                   onClick={() => toggleTeam(team)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
-                    subscribedTeams.includes(team)
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${subscribedTeams.includes(team)
                       ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20'
                       : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-500/50'
-                  }`}
+                    }`}
                 >
                   {team}
                 </button>
@@ -535,8 +530,8 @@ function useMatchNotifications(subscribedTeams: string[], subscribedLeagues: str
       try {
         const d = new Date();
         const dateStr = d.toISOString().split('T')[0].replace(/-/g, '');
-        const response = await fetch(`/api/matches?date=${dateStr}`);
-        
+        const response = await fetch(`${API_BASE}/api/matches?date=${dateStr}`);
+
         if (response.ok) {
           const contentType = response.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
@@ -549,7 +544,7 @@ function useMatchNotifications(subscribedTeams: string[], subscribedLeagues: str
 
                   if (isSubscribedTeam || isSubscribedLeague) {
                     const oldMatch = prevMatchesRef.current.find(m => m.id === newMatch.id);
-                    
+
                     if (oldMatch) {
                       // Check status change to live
                       if (oldMatch.status === 'upcoming' && newMatch.status === 'live') {
@@ -575,7 +570,7 @@ function useMatchNotifications(subscribedTeams: string[], subscribedLeagues: str
                         const now = new Date();
                         const diffMs = matchDateTime.getTime() - now.getTime();
                         const diffMins = Math.floor(diffMs / 60000);
-                        
+
                         if (diffMins > 0 && diffMins <= 15 && !notifiedPreMatchesRef.current.includes(newMatch.id)) {
                           showNotification('مباراة قادمة', `مباراة ${newMatch.homeTeam.name} ضد ${newMatch.awayTeam.name} ستبدأ قريباً`);
                           notifiedPreMatchesRef.current.push(newMatch.id);
@@ -600,7 +595,7 @@ function useMatchNotifications(subscribedTeams: string[], subscribedLeagues: str
 
     // Initial check
     checkMatches();
-    
+
     // Poll every 30 seconds
     const interval = setInterval(checkMatches, 30000);
     return () => clearInterval(interval);
@@ -686,7 +681,7 @@ export default function App() {
               <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">KOORA<span className="text-emerald-500 italic">X</span></h1>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             {/* Install PWA Button */}
             {showInstallBtn && (
@@ -801,9 +796,8 @@ function TabButton({ tab, activeTab, onClick, icon, label }: { tab: Tab, activeT
   return (
     <button
       onClick={() => onClick(tab)}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors relative ${
-        isActive ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800'
-      }`}
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors relative ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800'
+        }`}
     >
       {isActive && (
         <motion.div
@@ -825,9 +819,8 @@ function MobileTabButton({ tab, activeTab, onClick, icon, label }: { tab: Tab, a
   return (
     <button
       onClick={() => onClick(tab)}
-      className={`flex flex-col items-center gap-1 p-2 w-full transition-colors ${
-        isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
-      }`}
+      className={`flex flex-col items-center gap-1 p-2 w-full transition-colors ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
+        }`}
     >
       {icon}
       <span className="text-[10px] font-medium">{label}</span>
@@ -842,11 +835,11 @@ function TeamLogo({ team, className = "w-14 h-14" }: { team: Team, className?: s
 
   if (logoUrl && !error) {
     return (
-      <img 
-        src={logoUrl} 
-        alt={team.name} 
-        className={`${className} object-contain drop-shadow-sm`} 
-        referrerPolicy="no-referrer" 
+      <img
+        src={logoUrl}
+        alt={team.name}
+        className={`${className} object-contain drop-shadow-sm`}
+        referrerPolicy="no-referrer"
         onError={() => setError(true)}
       />
     );
@@ -861,16 +854,16 @@ function TeamLogo({ team, className = "w-14 h-14" }: { team: Team, className?: s
 
 function PlayerImage({ src, name, className = "w-20 h-20" }: { src?: string; name: string; className?: string }) {
   const [error, setError] = React.useState(false);
-  
+
   // Use Dicebear for a nice consistent avatar if no src or on error
   const placeholderUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=059669,10b981,34d399&fontFamily=Arial&fontWeight=700`;
-  
+
   if (!src || error) {
     return (
       <div className={`${className} rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border-4 border-white dark:border-slate-800 shadow-xl relative z-10 overflow-hidden`}>
-        <img 
-          src={placeholderUrl} 
-          alt={name} 
+        <img
+          src={placeholderUrl}
+          alt={name}
           className="w-full h-full object-cover"
           referrerPolicy="no-referrer"
         />
@@ -880,11 +873,11 @@ function PlayerImage({ src, name, className = "w-20 h-20" }: { src?: string; nam
 
   return (
     <div className={`${className} rounded-full relative z-10 overflow-hidden border-4 border-white dark:border-slate-800 shadow-xl`}>
-      <img 
-        src={src} 
-        alt={name} 
-        className="w-full h-full object-cover" 
-        referrerPolicy="no-referrer" 
+      <img
+        src={src}
+        alt={name}
+        className="w-full h-full object-cover"
+        referrerPolicy="no-referrer"
         loading="lazy"
         onError={() => setError(true)}
       />
@@ -894,26 +887,26 @@ function PlayerImage({ src, name, className = "w-20 h-20" }: { src?: string; nam
 
 function LeagueLogo({ league, logoUrl: apiLogoUrl, className = "w-4 h-4" }: { league: string, logoUrl?: string | null, className?: string }) {
   const [error, setError] = React.useState(false);
-  
+
   // Try to find the logo URL through various means
   const getLogo = () => {
     if (apiLogoUrl) return apiLogoUrl;
-    
+
     const cleanLeague = league.trim();
-    
+
     // 1. Direct match in local dictionary
     if (leagueLogos[cleanLeague]) return leagueLogos[cleanLeague];
-    
+
     // 2. Asset helper
     const assetLogo = getLeagueLogo(cleanLeague);
     if (assetLogo) return assetLogo;
-    
+
     // 3. Partial match (e.g. "الدوري الإنجليزي الممتاز" -> "الدوري الإنجليزي")
-    const foundKey = Object.keys(leagueLogos).find(k => 
+    const foundKey = Object.keys(leagueLogos).find(k =>
       cleanLeague.includes(k) || k.includes(cleanLeague)
     );
     if (foundKey) return leagueLogos[foundKey];
-    
+
     return null;
   };
 
@@ -928,19 +921,19 @@ function LeagueLogo({ league, logoUrl: apiLogoUrl, className = "w-4 h-4" }: { le
   }
 
   return (
-    <img 
-      src={logoUrl} 
-      alt={league} 
-      className={`${className} object-contain transition-all duration-300 group-hover:scale-110`} 
+    <img
+      src={logoUrl}
+      alt={league}
+      className={`${className} object-contain transition-all duration-300 group-hover:scale-110`}
       referrerPolicy="no-referrer"
       onError={() => setError(true)}
     />
   );
 }
 
-function MatchesView({ 
+function MatchesView({
   setActiveTab
-}: { 
+}: {
   setActiveTab: (tab: Tab) => void;
 }) {
   const [filterLeague, setFilterLeague] = useState<string>('الكل');
@@ -966,7 +959,7 @@ function MatchesView({
     if (offset === -1) return 'الأمس';
     if (offset === 0) return 'اليوم';
     if (offset === 1) return 'غداً';
-    
+
     const d = new Date();
     d.setDate(d.getDate() + offset);
     const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
@@ -990,7 +983,7 @@ function MatchesView({
   const toggleFollowMatch = (e: React.MouseEvent, matchId: string) => {
     e.stopPropagation();
     const isFollowed = followedMatches.includes(matchId);
-    
+
     if (isFollowed) {
       toast.success('تم إلغاء متابعة المباراة');
       const newFollowed = followedMatches.filter(id => id !== matchId);
@@ -1009,81 +1002,58 @@ function MatchesView({
 
   const loadMatches = async (retries = 3, dateStr?: string) => {
     try {
-      const healthResponse = await fetch('/api/health');
-      if (!healthResponse.ok) {
-        throw new Error('Server is unreachable');
-      }
-      
-      let endpoint = '';
       const targetDate = dateStr || getFormattedDate(dateOffset as number);
-      endpoint = `/api/matches?date=${targetDate}`;
-      
-      const response = await fetch(endpoint);
-      
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-      }
+      const data = await fetchLiveMatches(targetDate);
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Expected JSON but received:', text.substring(0, 100));
-        throw new Error('Server returned non-JSON response');
-      }
+      if (data && Array.isArray(data)) {
+        // Check for notifications
+        if (prevMatchesRef.current.length > 0) {
+          data.forEach((newMatch: Match) => {
+            const oldMatch = prevMatchesRef.current.find(m => m.id === newMatch.id);
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data && Array.isArray(data)) {
-          // Check for notifications
-          if (prevMatchesRef.current.length > 0) {
-            data.forEach((newMatch: Match) => {
-              const oldMatch = prevMatchesRef.current.find(m => m.id === newMatch.id);
-              
-              if (oldMatch) {
-                // Check status change to live
-                if (oldMatch.status === 'upcoming' && newMatch.status === 'live') {
-                  showNotification('بدأت المباراة!', `${newMatch.homeTeam.name} ضد ${newMatch.awayTeam.name}`);
-                }
-                // Check score change
-                if (
-                  (newMatch.homeScore !== undefined && oldMatch.homeScore !== undefined && newMatch.homeScore > oldMatch.homeScore) ||
-                  (newMatch.awayScore !== undefined && oldMatch.awayScore !== undefined && newMatch.awayScore > oldMatch.awayScore)
-                ) {
-                  showNotification('هدف!', `${newMatch.homeTeam.name} ${newMatch.homeScore} - ${newMatch.awayScore} ${newMatch.awayTeam.name}`);
-                }
-                // Check match finished
-                if (oldMatch.status === 'live' && newMatch.status === 'finished') {
-                  showNotification('نهاية المباراة', `${newMatch.homeTeam.name} ${newMatch.homeScore} - ${newMatch.awayScore} ${newMatch.awayTeam.name}`);
-                }
-              } else {
-                // Pre-match alert (check if match starts in <= 15 minutes)
-                if (newMatch.status === 'upcoming' && newMatch.time && newMatch.date) {
-                  const matchDateTime = new Date(`${newMatch.date}T${newMatch.time}`);
-                  const now = new Date();
-                  const diffMs = matchDateTime.getTime() - now.getTime();
-                  const diffMins = Math.floor(diffMs / 60000);
-                  
-                  if (diffMins > 0 && diffMins <= 15 && !notifiedPreMatchesRef.current.includes(newMatch.id)) {
-                    showNotification('مباراة قادمة', `مباراة ${newMatch.homeTeam.name} ضد ${newMatch.awayTeam.name} ستبدأ قريباً`);
-                    notifiedPreMatchesRef.current.push(newMatch.id);
-                  }
+            if (oldMatch) {
+              // Check status change to live
+              if (oldMatch.status === 'upcoming' && newMatch.status === 'live') {
+                showNotification('بدأت المباراة!', `${newMatch.homeTeam.name} ضد ${newMatch.awayTeam.name}`);
+              }
+              // Check score change
+              if (
+                (newMatch.homeScore !== undefined && oldMatch.homeScore !== undefined && newMatch.homeScore > oldMatch.homeScore) ||
+                (newMatch.awayScore !== undefined && oldMatch.awayScore !== undefined && newMatch.awayScore > oldMatch.awayScore)
+              ) {
+                showNotification('هدف!', `${newMatch.homeTeam.name} ${newMatch.homeScore} - ${newMatch.awayScore} ${newMatch.awayTeam.name}`);
+              }
+              // Check match finished
+              if (oldMatch.status === 'live' && newMatch.status === 'finished') {
+                showNotification('نهاية المباراة', `${newMatch.homeTeam.name} ${newMatch.homeScore} - ${newMatch.awayScore} ${newMatch.awayTeam.name}`);
+              }
+            } else {
+              // Pre-match alert (check if match starts in <= 15 minutes)
+              if (newMatch.status === 'upcoming' && newMatch.time && newMatch.date) {
+                const matchDateTime = new Date(`${newMatch.date}T${newMatch.time}`);
+                const now = new Date();
+                const diffMs = matchDateTime.getTime() - now.getTime();
+                const diffMins = Math.floor(diffMs / 60000);
+
+                if (diffMins > 0 && diffMins <= 15 && !notifiedPreMatchesRef.current.includes(newMatch.id)) {
+                  showNotification('مباراة قادمة', `مباراة ${newMatch.homeTeam.name} ضد ${newMatch.awayTeam.name} ستبدأ قريباً`);
+                  notifiedPreMatchesRef.current.push(newMatch.id);
                 }
               }
-            });
-          }
-          prevMatchesRef.current = data;
-          setMatches(data);
-          return;
+            }
+          });
         }
+        prevMatchesRef.current = data;
+        setMatches(data);
+        return;
       }
-      throw new Error(`Fetch failed with status: ${response.status}`);
     } catch (error: any) {
       const isNetworkError = error?.message === 'Failed to fetch' || error === 'TypeError: Failed to fetch' || String(error).includes('Failed to fetch') || error?.message === 'Server is unreachable';
-      
+
       if (!isNetworkError) {
         console.error("Error fetching matches:", error);
       }
-      
+
       if (retries > 0) {
         if (!isNetworkError) console.log(`Retrying match fetch... (${retries} attempts left)`);
         setTimeout(() => loadMatches(retries - 1, dateStr), 2000);
@@ -1117,7 +1087,7 @@ function MatchesView({
 
   useEffect(() => {
     setIsLoadingMatches(true);
-    
+
     // Only poll for today's matches
     let interval: any;
     if (dateOffset === 0) {
@@ -1128,7 +1098,7 @@ function MatchesView({
     } else {
       loadMatches(3, getFormattedDate(dateOffset as number));
     }
-    
+
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -1175,7 +1145,7 @@ function MatchesView({
         if (isNaN(parts[0]) || isNaN(parts[1])) return 9999;
         return parts[0] * 60 + parts[1];
       };
-      
+
       const minsA = parseTime(a.time);
       const minsB = parseTime(b.time);
       return minsA - minsB;
@@ -1190,11 +1160,10 @@ function MatchesView({
           <button
             key={offset}
             onClick={() => setDateOffset(offset)}
-            className={`flex flex-col items-center min-w-[80px] py-3 rounded-2xl text-sm font-bold transition-all duration-300 border ${
-              dateOffset === offset 
-                ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/30 scale-105 z-10' 
+            className={`flex flex-col items-center min-w-[80px] py-3 rounded-2xl text-sm font-bold transition-all duration-300 border ${dateOffset === offset
+                ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/30 scale-105 z-10'
                 : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-500/50'
-            }`}
+              }`}
           >
             <span className="text-[10px] opacity-80 mb-1">{getDayLabel(offset)}</span>
             <span className="text-base">{getDaySubLabel(offset)}</span>
@@ -1210,11 +1179,10 @@ function MatchesView({
             <button
               key={league}
               onClick={() => setFilterLeague(league)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors border ${
-                filterLeague === league 
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400' 
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors border ${filterLeague === league
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400'
                   : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800/50'
-              }`}
+                }`}
             >
               {league !== 'الكل' && (
                 <LeagueLogo league={league} logoUrl={leagueMatch?.leagueLogo} className="w-4 h-4" />
@@ -1251,113 +1219,113 @@ function MatchesView({
             return indexA - indexB;
           })
           .map(([league, leagueMatches]) => (
-          <div key={league} className="space-y-4">
-            <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm mx-2">
-              <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center p-1.5 shadow-inner">
-                <LeagueLogo league={league} className="w-full h-full" />
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 dark:text-white leading-none mb-1">{league}</h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">المباريات والنتائج المباشرة</p>
-              </div>
-            </div>
-            
-            <div className="grid gap-3">
-              {(leagueMatches as Match[]).map(match => (
-                <div 
-                  key={match.id} 
-                  onClick={() => {
-                    showInterstitial();
-                    setSelectedMatch(match);
-                  }}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shadow-sm dark:shadow-none cursor-pointer relative"
-                >
-                  <button 
-                    onClick={(e) => toggleFollowMatch(e, match.id)}
-                    className="absolute top-2 left-2 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors z-10"
-                    title={followedMatches.includes(match.id) ? "إلغاء المتابعة" : "متابعة المباراة"}
-                  >
-                    {followedMatches.includes(match.id) ? <BellRing className="w-4 h-4 text-emerald-500" /> : <Bell className="w-4 h-4" />}
-                  </button>
-                  <div className="flex items-center justify-between">
-                    {/* Home Team */}
-                    <div className="flex items-center justify-end gap-2 sm:gap-3 w-1/3">
-                      <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-200 text-left line-clamp-2 sm:line-clamp-1">{match.homeTeam.name}</span>
-                      <TeamLogo team={match.homeTeam} />
-                    </div>
-
-                    {/* Score / Time */}
-                    <div className="flex flex-col items-center justify-center w-1/3 gap-1">
-                      {match.status === 'upcoming' && (
-                        <>
-                          <span className="text-xl font-bold text-slate-700 dark:text-slate-300">{match.time}</span>
-                          <span className="text-xs text-slate-500 flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> لم تبدأ
-                          </span>
-                        </>
-                      )}
-                      {match.status === 'live' && (
-                        <>
-                          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{match.time}</span>
-                          <div className="flex items-center gap-3 text-2xl font-black text-slate-900 dark:text-white">
-                            <span>{match.homeScore}</span>
-                            <span className="text-slate-400 dark:text-slate-600">-</span>
-                            <span>{match.awayScore}</span>
-                          </div>
-                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-500 animate-pulse flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            {match.minute}
-                          </span>
-                        </>
-                      )}
-                      {match.status === 'finished' && (
-                        <>
-                          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{match.time}</span>
-                          <div className="flex items-center gap-3 text-2xl font-black text-slate-900 dark:text-white">
-                            <span>{match.homeScore}</span>
-                            <span className="text-slate-400 dark:text-slate-600">-</span>
-                            <span>{match.awayScore}</span>
-                          </div>
-                          <span className="text-xs text-slate-500">انتهت</span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Away Team */}
-                    <div className="flex items-center justify-start gap-2 sm:gap-3 w-1/3">
-                      <TeamLogo team={match.awayTeam} />
-                      <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-200 text-right line-clamp-2 sm:line-clamp-1">{match.awayTeam.name}</span>
-                    </div>
-                  </div>
-
-                  {/* Goal Scorers */}
-                  {match.events && match.events.filter(e => e.type === 'goal').length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/50 flex justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                      <div className="w-1/2 pr-2">
-                        {match.events.filter(e => e.type === 'goal' && e.teamId === match.homeTeam.id).map(e => (
-                          <div key={e.id} className="flex items-center justify-end gap-1 mb-1">
-                            <span className="truncate">{e.playerName}</span>
-                            <span className="text-slate-400 font-mono">{e.minute}</span>
-                            <Goal className="w-3 h-3 text-emerald-500 shrink-0" />
-                          </div>
-                        ))}
-                      </div>
-                      <div className="w-1/2 pl-2">
-                        {match.events.filter(e => e.type === 'goal' && e.teamId === match.awayTeam.id).map(e => (
-                          <div key={e.id} className="flex items-center justify-start gap-1 mb-1">
-                            <Goal className="w-3 h-3 text-emerald-500 shrink-0" />
-                            <span className="text-slate-400 font-mono">{e.minute}</span>
-                            <span className="truncate">{e.playerName}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+            <div key={league} className="space-y-4">
+              <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm mx-2">
+                <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center p-1.5 shadow-inner">
+                  <LeagueLogo league={league} className="w-full h-full" />
                 </div>
-              ))}
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white leading-none mb-1">{league}</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">المباريات والنتائج المباشرة</p>
+                </div>
+              </div>
+
+              <div className="grid gap-3">
+                {(leagueMatches as Match[]).map(match => (
+                  <div
+                    key={match.id}
+                    onClick={() => {
+                      showInterstitial();
+                      setSelectedMatch(match);
+                    }}
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shadow-sm dark:shadow-none cursor-pointer relative"
+                  >
+                    <button
+                      onClick={(e) => toggleFollowMatch(e, match.id)}
+                      className="absolute top-2 left-2 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors z-10"
+                      title={followedMatches.includes(match.id) ? "إلغاء المتابعة" : "متابعة المباراة"}
+                    >
+                      {followedMatches.includes(match.id) ? <BellRing className="w-4 h-4 text-emerald-500" /> : <Bell className="w-4 h-4" />}
+                    </button>
+                    <div className="flex items-center justify-between">
+                      {/* Home Team */}
+                      <div className="flex items-center justify-end gap-2 sm:gap-3 w-1/3">
+                        <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-200 text-left line-clamp-2 sm:line-clamp-1">{match.homeTeam.name}</span>
+                        <TeamLogo team={match.homeTeam} />
+                      </div>
+
+                      {/* Score / Time */}
+                      <div className="flex flex-col items-center justify-center w-1/3 gap-1">
+                        {match.status === 'upcoming' && (
+                          <>
+                            <span className="text-xl font-bold text-slate-700 dark:text-slate-300">{match.time}</span>
+                            <span className="text-xs text-slate-500 flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> لم تبدأ
+                            </span>
+                          </>
+                        )}
+                        {match.status === 'live' && (
+                          <>
+                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{match.time}</span>
+                            <div className="flex items-center gap-3 text-2xl font-black text-slate-900 dark:text-white">
+                              <span>{match.homeScore}</span>
+                              <span className="text-slate-400 dark:text-slate-600">-</span>
+                              <span>{match.awayScore}</span>
+                            </div>
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-500 animate-pulse flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                              {match.minute}
+                            </span>
+                          </>
+                        )}
+                        {match.status === 'finished' && (
+                          <>
+                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{match.time}</span>
+                            <div className="flex items-center gap-3 text-2xl font-black text-slate-900 dark:text-white">
+                              <span>{match.homeScore}</span>
+                              <span className="text-slate-400 dark:text-slate-600">-</span>
+                              <span>{match.awayScore}</span>
+                            </div>
+                            <span className="text-xs text-slate-500">انتهت</span>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Away Team */}
+                      <div className="flex items-center justify-start gap-2 sm:gap-3 w-1/3">
+                        <TeamLogo team={match.awayTeam} />
+                        <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-200 text-right line-clamp-2 sm:line-clamp-1">{match.awayTeam.name}</span>
+                      </div>
+                    </div>
+
+                    {/* Goal Scorers */}
+                    {match.events && match.events.filter(e => e.type === 'goal').length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/50 flex justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                        <div className="w-1/2 pr-2">
+                          {match.events.filter(e => e.type === 'goal' && e.teamId === match.homeTeam.id).map(e => (
+                            <div key={e.id} className="flex items-center justify-end gap-1 mb-1">
+                              <span className="truncate">{e.playerName}</span>
+                              <span className="text-slate-400 font-mono">{e.minute}</span>
+                              <Goal className="w-3 h-3 text-emerald-500 shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="w-1/2 pl-2">
+                          {match.events.filter(e => e.type === 'goal' && e.teamId === match.awayTeam.id).map(e => (
+                            <div key={e.id} className="flex items-center justify-start gap-1 mb-1">
+                              <Goal className="w-3 h-3 text-emerald-500 shrink-0" />
+                              <span className="text-slate-400 font-mono">{e.minute}</span>
+                              <span className="truncate">{e.playerName}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))
+          ))
       )}
 
       {/* Match Details Modal */}
@@ -1387,9 +1355,9 @@ function MatchesView({
 
               {/* Stadium Map Image */}
               <div className="relative h-48 w-full bg-slate-200 dark:bg-slate-800">
-                <img 
-                  src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=800" 
-                  alt="خريطة الملعب" 
+                <img
+                  src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=800"
+                  alt="خريطة الملعب"
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -1410,7 +1378,7 @@ function MatchesView({
                     <TeamLogo team={selectedMatch.homeTeam} />
                     <span className="text-sm font-bold text-center text-slate-900 dark:text-white">{selectedMatch.homeTeam.name}</span>
                   </div>
-                  
+
                   <div className="flex flex-col items-center justify-center w-1/3">
                     {leagueLogos[selectedMatch.league] ? (
                       <img src={leagueLogos[selectedMatch.league]} alt={selectedMatch.league} className="w-5 h-5 object-contain mb-1 opacity-80" referrerPolicy="no-referrer" />
@@ -1530,7 +1498,7 @@ function MatchesView({
                       <Activity className="w-5 h-5 text-emerald-500" />
                       أحداث المباراة
                     </h4>
-                    
+
                     {isLoadingEvents ? (
                       <div className="flex justify-center py-8">
                         <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
@@ -1566,18 +1534,17 @@ function MatchesView({
                                   const isNeutral = !isHome && !isAway;
 
                                   return (
-                                    <div 
-                                      key={event.id} 
+                                    <div
+                                      key={event.id}
                                       className={`flex items-center gap-4 ${isHome ? 'flex-row' : isAway ? 'flex-row-reverse' : 'flex-row justify-center'}`}
                                     >
                                       {/* Event Content */}
                                       <div className={`flex-1 max-w-[42%] ${isHome ? 'text-left' : isAway ? 'text-right' : 'text-center'}`}>
-                                        <div className={`p-3 rounded-2xl border transition-all duration-300 ${
-                                          event.type === 'goal' ? 'bg-emerald-500/10 border-emerald-500/20' :
-                                          event.type === 'red_card' ? 'bg-red-500/10 border-red-500/20' :
-                                          event.type === 'yellow_card' ? 'bg-yellow-400/10 border-yellow-400/20' :
-                                          'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800'
-                                        }`}>
+                                        <div className={`p-3 rounded-2xl border transition-all duration-300 ${event.type === 'goal' ? 'bg-emerald-500/10 border-emerald-500/20' :
+                                            event.type === 'red_card' ? 'bg-red-500/10 border-red-500/20' :
+                                              event.type === 'yellow_card' ? 'bg-yellow-400/10 border-yellow-400/20' :
+                                                'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800'
+                                          }`}>
                                           {event.playerName && (
                                             <div className="font-black text-xs text-slate-900 dark:text-white mb-1">
                                               {event.playerName}
@@ -1590,13 +1557,12 @@ function MatchesView({
                                       </div>
 
                                       {/* Icon in the middle */}
-                                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 z-10 border-4 border-white dark:border-slate-900 shadow-sm ${
-                                        event.type === 'goal' ? 'bg-emerald-500 text-white' :
-                                        event.type === 'yellow_card' ? 'bg-yellow-400 text-white' :
-                                        event.type === 'red_card' ? 'bg-red-500 text-white' :
-                                        event.type === 'substitution' ? 'bg-blue-500 text-white' :
-                                        'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300'
-                                      }`}>
+                                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 z-10 border-4 border-white dark:border-slate-900 shadow-sm ${event.type === 'goal' ? 'bg-emerald-500 text-white' :
+                                          event.type === 'yellow_card' ? 'bg-yellow-400 text-white' :
+                                            event.type === 'red_card' ? 'bg-red-500 text-white' :
+                                              event.type === 'substitution' ? 'bg-blue-500 text-white' :
+                                                'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300'
+                                        }`}>
                                         {event.type === 'goal' && <Goal className="w-4 h-4" />}
                                         {event.type === 'yellow_card' && <div className="w-3 h-4 bg-white rounded-sm"></div>}
                                         {event.type === 'red_card' && <div className="w-3 h-4 bg-white rounded-sm"></div>}
@@ -1633,7 +1599,7 @@ function MatchesView({
 function StatBar({ label, homeValue, awayValue, suffix = '' }: { label: string, homeValue: number, awayValue: number, suffix?: string }) {
   const total = homeValue + awayValue || 1;
   const homePercent = (homeValue / total) * 100;
-  
+
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-xs font-bold text-slate-600 dark:text-slate-400">
@@ -1642,12 +1608,12 @@ function StatBar({ label, homeValue, awayValue, suffix = '' }: { label: string, 
         <span>{awayValue}{suffix}</span>
       </div>
       <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full flex overflow-hidden">
-        <div 
-          className="h-full bg-emerald-500 transition-all duration-500" 
+        <div
+          className="h-full bg-emerald-500 transition-all duration-500"
           style={{ width: `${homePercent}%` }}
         />
-        <div 
-          className="h-full bg-slate-300 dark:bg-slate-600 transition-all duration-500" 
+        <div
+          className="h-full bg-slate-300 dark:bg-slate-600 transition-all duration-500"
           style={{ width: `${100 - homePercent}%` }}
         />
       </div>
@@ -1677,12 +1643,9 @@ function HighlightsView() {
     const fetchHighlights = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/highlights?league=${encodeURIComponent(activeLeagueFilter)}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.length > 0) {
-            setHighlights(data);
-          }
+        const data = await fetchLiveHighlights();
+        if (data && data.length > 0) {
+          setHighlights(data);
         }
       } catch (error: any) {
         if (error?.message !== 'Failed to fetch' && error !== 'TypeError: Failed to fetch' && !String(error).includes('Failed to fetch')) {
@@ -1693,9 +1656,9 @@ function HighlightsView() {
         setIsLoading(false);
       }
     };
-    
+
     fetchHighlights();
-    
+
     // Poll for new highlights every 5 minutes
     const interval = setInterval(fetchHighlights, 300000);
     return () => clearInterval(interval);
@@ -1732,13 +1695,13 @@ function HighlightsView() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-end gap-6 px-2">
-        
+
         {/* Search & Sort Bar */}
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-80 group">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="ابحث عن ملخص مباراة، فريق، أو دوري..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -1746,25 +1709,23 @@ function HighlightsView() {
               dir="rtl"
             />
           </div>
-          
+
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-1 shadow-sm dark:shadow-none w-full sm:w-auto">
             <button
               onClick={() => setSortBy('date')}
-              className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                sortBy === 'date' 
-                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' 
+              className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all ${sortBy === 'date'
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'
                   : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-              }`}
+                }`}
             >
               الأحدث
             </button>
             <button
               onClick={() => setSortBy('views')}
-              className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                sortBy === 'views' 
-                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' 
+              className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${sortBy === 'views'
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'
                   : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-              }`}
+                }`}
             >
               <TrendingUp className="w-3 h-3" />
               الأكثر مشاهدة
@@ -1779,11 +1740,10 @@ function HighlightsView() {
           <button
             key={league}
             onClick={() => setActiveLeagueFilter(league)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 border ${
-              activeLeagueFilter === league 
-                ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20 scale-105 z-10' 
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 border ${activeLeagueFilter === league
+                ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20 scale-105 z-10'
                 : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-500/50'
-            }`}
+              }`}
           >
             {league !== 'الكل' && (
               <LeagueLogo league={league} className="w-4 h-4" />
@@ -1812,17 +1772,16 @@ function HighlightsView() {
           <button
             key={range}
             onClick={() => setTimeRangeFilter(range)}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-              timeRangeFilter === range
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${timeRangeFilter === range
                 ? 'bg-emerald-500 text-white'
                 : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
+              }`}
           >
             {range === '24h' ? 'آخر 24 ساعة' : range === '3d' ? 'آخر 3 أيام' : range === '7d' ? 'آخر 7 أيام' : 'الكل'}
           </button>
         ))}
       </div>
-      
+
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-500 dark:text-slate-400">
           <RefreshCw className="w-8 h-8 animate-spin mb-4 text-emerald-500" />
@@ -1832,7 +1791,7 @@ function HighlightsView() {
         <div className="flex flex-col items-center justify-center py-20 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
           <Search className="w-12 h-12 mb-4 opacity-20" />
           <p className="text-lg font-medium">لا توجد نتائج بحث مطابقة</p>
-          <button 
+          <button
             onClick={() => setSearchTerm('')}
             className="mt-4 text-emerald-500 hover:underline text-sm font-medium"
           >
@@ -1844,8 +1803,8 @@ function HighlightsView() {
           {filteredHighlights.map(highlight => {
             const isExpanded = highlight.id === expandedHighlightId;
             return (
-              <div 
-                key={highlight.id} 
+              <div
+                key={highlight.id}
                 onClick={() => setExpandedHighlightId(isExpanded ? null : highlight.id)}
                 className={`group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden cursor-pointer hover:border-emerald-500/50 dark:hover:border-emerald-500/50 transition-all duration-300 shadow-sm hover:shadow-xl dark:shadow-none hover:-translate-y-1 ${isExpanded ? 'md:col-span-2 lg:col-span-3' : ''}`}
               >
@@ -1860,9 +1819,9 @@ function HighlightsView() {
                     ></iframe>
                   ) : (
                     <>
-                      <img 
-                        src={highlight.thumbnail} 
-                        alt={highlight.title} 
+                      <img
+                        src={highlight.thumbnail}
+                        alt={highlight.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         referrerPolicy="no-referrer"
                       />
@@ -1901,7 +1860,7 @@ function HighlightsView() {
                       </div>
                     )}
                   </div>
-                  
+
                   <h3 className={`font-bold text-slate-900 dark:text-slate-100 mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors leading-relaxed ${isExpanded ? 'text-xl' : 'line-clamp-2 min-h-[40px]'}`} dir="rtl">
                     {highlight.title}
                   </h3>
@@ -1919,7 +1878,7 @@ function HighlightsView() {
                       ))}
                     </div>
                   )}
-                  
+
                   <div className="flex items-center gap-2 text-[11px] font-bold">
                     <div className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-800/50">
                       <Clock className="w-3.5 h-3.5 text-emerald-500" />
@@ -1952,18 +1911,18 @@ function TransfersView() {
   const fetchTransfers = async (isPolling = false) => {
     if (!isPolling) setIsRefreshing(true);
     try {
-      const response = await fetch('/api/transfers');
+      const response = await fetch(`${API_BASE}/api/transfers`);
       if (response.ok) {
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
           const data = await response.json();
           const newTransfers = data && Array.isArray(data) && data.length > 0 ? data : transfersData;
-          
+
           if (isPolling && prevTransfersRef.current.length > 0) {
             // Check for new transfers of followed players
             const existingIds = new Set(prevTransfersRef.current.map(t => t.id));
             const newlyAdded = newTransfers.filter((t: Transfer) => !existingIds.has(t.id));
-            
+
             newlyAdded.forEach((t: Transfer) => {
               if (followedPlayersRef.current.includes(t.playerName)) {
                 toast.success(`انتقال جديد: ${t.playerName} إلى ${t.toTeam.name}!`, {
@@ -1973,7 +1932,7 @@ function TransfersView() {
               }
             });
           }
-          
+
           prevTransfersRef.current = newTransfers;
           setTransfers(newTransfers);
         } else {
@@ -2015,13 +1974,13 @@ function TransfersView() {
     const updateTimer = () => {
       const now = new Date();
       const currentYear = now.getFullYear();
-      
+
       // Define windows (approximate dates for major European leagues)
       const winterStart = new Date(currentYear, 0, 1); // Jan 1
       const winterEnd = new Date(currentYear, 0, 31, 23, 59, 59); // Jan 31
       const summerStart = new Date(currentYear, 6, 1); // July 1
       const summerEnd = new Date(currentYear, 7, 31, 23, 59, 59); // Aug 31
-      
+
       let targetDate: Date;
 
       if (now < winterStart) {
@@ -2073,7 +2032,7 @@ function TransfersView() {
     if (now >= summerStart && now <= summerEnd) {
       return { isMarketOpen: true, windowName: 'النافذة الصيفية', statusText: 'يغلق سوق الانتقالات خلال' };
     }
-    
+
     // If closed, determine which one is next
     if (now < winterStart || now > summerEnd) {
       return { isMarketOpen: false, windowName: 'النافذة الشتوية', statusText: 'يفتح سوق الانتقالات خلال' };
@@ -2106,11 +2065,10 @@ function TransfersView() {
           >
             <RefreshCw className={`w-5 h-5 text-emerald-500 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
-          <span className={`text-sm font-medium px-3 py-1 rounded-full flex items-center gap-1.5 ${
-            isMarketOpen 
-              ? 'text-emerald-600 dark:text-emerald-500 bg-emerald-100 dark:bg-emerald-500/10' 
+          <span className={`text-sm font-medium px-3 py-1 rounded-full flex items-center gap-1.5 ${isMarketOpen
+              ? 'text-emerald-600 dark:text-emerald-500 bg-emerald-100 dark:bg-emerald-500/10'
               : 'text-rose-600 dark:text-rose-500 bg-rose-100 dark:bg-rose-500/10'
-          }`}>
+            }`}>
             <span className={`w-2 h-2 rounded-full animate-pulse ${isMarketOpen ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
             {isMarketOpen ? 'مفتوح الآن' : 'مغلق الآن'}
           </span>
@@ -2118,9 +2076,8 @@ function TransfersView() {
       </div>
 
       {/* Transfer Window Countdown Banner */}
-      <div className={`rounded-2xl p-5 text-white flex flex-col md:flex-row items-center justify-between shadow-lg gap-4 bg-gradient-to-r ${
-        isMarketOpen ? 'from-emerald-500 to-teal-600' : 'from-slate-700 to-slate-900'
-      }`}>
+      <div className={`rounded-2xl p-5 text-white flex flex-col md:flex-row items-center justify-between shadow-lg gap-4 bg-gradient-to-r ${isMarketOpen ? 'from-emerald-500 to-teal-600' : 'from-slate-700 to-slate-900'
+        }`}>
         <div className="flex items-center gap-4">
           <div className="bg-white/20 p-3 rounded-full backdrop-blur-sm">
             <Clock className="w-6 h-6" />
@@ -2130,7 +2087,7 @@ function TransfersView() {
             <p className="text-emerald-100 text-sm opacity-90">{statusText}</p>
           </div>
         </div>
-        
+
         <div className="flex gap-2 sm:gap-3 text-center" dir="ltr">
           <div className="bg-black/20 rounded-xl p-2 min-w-[60px] sm:min-w-[70px] backdrop-blur-sm border border-white/10">
             <div className="text-2xl font-black">{timeLeft.days}</div>
@@ -2150,7 +2107,7 @@ function TransfersView() {
           </div>
         </div>
       </div>
-      
+
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-12">
           <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
@@ -2160,84 +2117,84 @@ function TransfersView() {
         <div className="grid gap-4">
           {transfers.map(transfer => {
             const isFollowed = followedPlayers.includes(transfer.playerName);
-            
+
             return (
-            <div key={transfer.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row items-center gap-6 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all shadow-sm hover:shadow-md dark:shadow-none group">
-              
-              {/* Player Info */}
-              <div className="flex items-center gap-5 w-full md:w-[35%]">
-                <div className="relative shrink-0">
-                  <div className="absolute -inset-1 bg-gradient-to-tr from-emerald-500 to-indigo-500 rounded-full opacity-20 group-hover:opacity-40 blur transition-opacity"></div>
-                  <PlayerImage src={transfer.playerImage} name={transfer.playerName} />
-                  <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-full border-2 border-white dark:border-slate-800 z-20 shadow-lg">
-                    <Trophy className="w-3 h-3" />
+              <div key={transfer.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row items-center gap-6 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all shadow-sm hover:shadow-md dark:shadow-none group">
+
+                {/* Player Info */}
+                <div className="flex items-center gap-5 w-full md:w-[35%]">
+                  <div className="relative shrink-0">
+                    <div className="absolute -inset-1 bg-gradient-to-tr from-emerald-500 to-indigo-500 rounded-full opacity-20 group-hover:opacity-40 blur transition-opacity"></div>
+                    <PlayerImage src={transfer.playerImage} name={transfer.playerName} />
+                    <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-full border-2 border-white dark:border-slate-800 z-20 shadow-lg">
+                      <Trophy className="w-3 h-3" />
+                    </div>
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-xl text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{transfer.playerName}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-sm font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">{transfer.position}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="min-w-0">
-                  <h3 className="font-bold text-xl text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{transfer.playerName}</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-sm font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">{transfer.position}</span>
+
+                {/* Transfer Path */}
+                <div className="flex items-center justify-center gap-4 w-full md:w-[40%] py-6 md:py-0 border-y md:border-y-0 md:border-x border-slate-100 dark:border-slate-800/50 md:px-6">
+                  <div className="flex flex-col items-center flex-1 min-w-0">
+                    <TeamLogo team={transfer.fromTeam} />
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-2 text-center truncate w-full">{transfer.fromTeam.name}</span>
+                  </div>
+
+                  <div className="flex flex-col items-center px-2 shrink-0">
+                    <div className={`rounded-full p-1.5 mb-1 border ${transfer.type === 'loan'
+                        ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-500'
+                        : 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-500'
+                      }`}>
+                      {transfer.type === 'loan' ? (
+                        <RefreshCw className="w-4 h-4" />
+                      ) : (
+                        <ChevronLeft className="w-4 h-4" />
+                      )}
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${transfer.type === 'loan'
+                        ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-600 dark:text-amber-400'
+                        : 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                      }`}>
+                      {transfer.type === 'loan' ? 'إعارة' : 'انتقال دائم'}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col items-center flex-1 min-w-0">
+                    <TeamLogo team={transfer.toTeam} />
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-2 text-center truncate w-full">{transfer.toTeam.name}</span>
                   </div>
                 </div>
-              </div>
 
-            {/* Transfer Path */}
-            <div className="flex items-center justify-center gap-4 w-full md:w-[40%] py-6 md:py-0 border-y md:border-y-0 md:border-x border-slate-100 dark:border-slate-800/50 md:px-6">
-              <div className="flex flex-col items-center flex-1 min-w-0">
-                <TeamLogo team={transfer.fromTeam} />
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-2 text-center truncate w-full">{transfer.fromTeam.name}</span>
-              </div>
-              
-              <div className="flex flex-col items-center px-2 shrink-0">
-                <div className={`rounded-full p-1.5 mb-1 border ${
-                  transfer.type === 'loan' 
-                    ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-500' 
-                    : 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-500'
-                }`}>
-                  {transfer.type === 'loan' ? (
-                    <RefreshCw className="w-4 h-4" />
-                  ) : (
-                    <ChevronLeft className="w-4 h-4" />
-                  )}
+                {/* Details & Follow */}
+                <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center w-full md:w-[25%] gap-4 md:gap-3">
+                  <div className="flex flex-col items-start md:items-end">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 mb-1">{transfer.date}</span>
+                    <span className="font-black text-xl text-emerald-600 dark:text-emerald-400 drop-shadow-sm">{transfer.fee}</span>
+                  </div>
+                  <button
+                    onClick={() => toggleFollow(transfer.playerName)}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all transform active:scale-95 ${isFollowed
+                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:border-emerald-500 hover:text-emerald-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:border-emerald-500 dark:hover:text-emerald-400'
+                      }`}
+                  >
+                    {isFollowed ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                    {isFollowed ? 'متابع' : 'متابعة'}
+                  </button>
                 </div>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                  transfer.type === 'loan'
-                    ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-600 dark:text-amber-400'
-                    : 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                }`}>
-                  {transfer.type === 'loan' ? 'إعارة' : 'انتقال دائم'}
-                </span>
-              </div>
 
-              <div className="flex flex-col items-center flex-1 min-w-0">
-                <TeamLogo team={transfer.toTeam} />
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-2 text-center truncate w-full">{transfer.toTeam.name}</span>
               </div>
-            </div>
-
-            {/* Details & Follow */}
-            <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center w-full md:w-[25%] gap-4 md:gap-3">
-              <div className="flex flex-col items-start md:items-end">
-                <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 mb-1">{transfer.date}</span>
-                <span className="font-black text-xl text-emerald-600 dark:text-emerald-400 drop-shadow-sm">{transfer.fee}</span>
-              </div>
-              <button
-                onClick={() => toggleFollow(transfer.playerName)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all transform active:scale-95 ${
-                  isFollowed 
-                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30' 
-                    : 'bg-white text-slate-700 border border-slate-200 hover:border-emerald-500 hover:text-emerald-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:border-emerald-500 dark:hover:text-emerald-400'
-                }`}
-              >
-                {isFollowed ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-                {isFollowed ? 'متابع' : 'متابعة'}
-              </button>
-            </div>
-
-          </div>
-        )})}
+            )
+          })}
         </div>
       )}
     </div>
   );
 }
+
+
