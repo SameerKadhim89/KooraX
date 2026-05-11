@@ -1,7 +1,6 @@
 console.log("Server file loaded");
 import express from "express";
 import cors from "cors";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import Parser from "rss-parser";
 import * as cheerio from "cheerio";
@@ -10,245 +9,182 @@ import yts from 'yt-search';
 import admin from "firebase-admin";
 import firebaseConfig from '../firebase-applet-config.json';
 
-// Global error handlers
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception thrown:', err);
-});
-
-// Initialize Firebase Admin
+// Initialize Firebase
 try {
   if (!admin.apps.length) {
-    admin.initializeApp({
-      projectId: firebaseConfig.projectId,
-    });
-    console.log("Firebase Admin initialized");
+    admin.initializeApp({ projectId: firebaseConfig.projectId });
   }
-} catch (error) {
-  console.error("Firebase Admin initialization error:", error);
-}
+} catch (error) { console.error("Firebase Admin Error:", error); }
 
 const firestore = admin.firestore();
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-// Match Tracker for Smart Notifications
-const matchStates = new Map<string, any>();
-const espnLeagueMap: Record<string, string> = {
+app.use(cors());
+app.use(express.json());
+
+// Expanded League Map for better coverage
+const LEAGUE_MAP: Record<string, string> = {
   'eng.1': 'الدوري الإنجليزي الممتاز',
   'esp.1': 'الدوري الإسباني',
   'ita.1': 'الدوري الإيطالي',
   'ger.1': 'الدوري الألماني',
   'fra.1': 'الدوري الفرنسي',
   'uefa.champions': 'دوري أبطال أوروبا',
+  'uefa.europa': 'الدوري الأوروبي',
+  'ksa.1': 'دوري روشن السعودي',
+  'afc.champions': 'دوري أبطال آسيا',
   'fifa.world': 'كأس العالم',
   'ned.1': 'الدوري الهولندي',
   'por.1': 'الدوري البرتغالي',
-  'bel.1': 'الدوري البلجيكي'
+  'usa.1': 'الدوري الأمريكي'
 };
 
-async function checkMatchUpdates() {
-  console.log("[Notifications] Checking match updates...");
-  const leagues = Object.keys(espnLeagueMap);
+// --- API Endpoints ---
 
-  for (const league of leagues) {
-    try {
-      const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/scoreboard?limit=50`;
-      const response = await fetch(url);
-      if (!response.ok) continue;
+app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
-      const data = await response.json() as any;
-      if (!data || !data.events) continue;
-
-      for (const event of data.events) {
-        const matchId = event.id;
-        const statusState = event.status.type.state;
-        const homeTeam = event.competitions[0].competitors.find((c: any) => c.homeAway === 'home');
-        const awayTeam = event.competitions[0].competitors.find((c: any) => c.homeAway === 'away');
-        const homeScore = parseInt(homeTeam.score) || 0;
-        const awayScore = parseInt(awayTeam.score) || 0;
-        const leagueName = espnLeagueMap[league];
-
-        const lastState = matchStates.get(matchId);
-
-        if (!lastState && statusState === 'in') {
-          await sendGlobalNotification({ title: 'بدأت المباراة ⚽', body: `انطلقت مباراة ${homeTeam.team.displayName} ضد ${awayTeam.team.displayName} في ${leagueName}`, matchId, type: 'start' });
-        } else if (lastState && lastState.status !== 'in' && statusState === 'in') {
-          await sendGlobalNotification({ title: 'بدأت المباراة ⚽', body: `انطلقت مباراة ${homeTeam.team.displayName} ضد ${awayTeam.team.displayName} في ${leagueName}`, matchId, type: 'start' });
-        }
-
-        if (lastState && (homeScore > lastState.homeScore || awayScore > lastState.awayScore)) {
-          const scoringTeam = homeScore > lastState.homeScore ? homeTeam.team.displayName : awayTeam.team.displayName;
-          await sendGlobalNotification({ title: 'هدف! ⚽', body: `جووووووول! ${scoringTeam} يسجل في مباراة ${homeTeam.team.displayName} (${homeScore}) - (${awayScore}) ${awayTeam.team.displayName}`, matchId, type: 'goal' });
-        }
-
-        if (lastState && lastState.status === 'in' && statusState === 'post') {
-          await sendGlobalNotification({ title: 'انتهت المباراة ✅', body: `نهاية المباراة: ${homeTeam.team.displayName} ${homeScore} - ${awayScore} ${awayTeam.team.displayName}`, matchId, type: 'finish' });
-        }
-
-        matchStates.set(matchId, { status: statusState, homeScore, awayScore });
-      }
-    } catch (err) { /* Silent */ }
-  }
-}
-
-async function sendGlobalNotification(notif: { title: string, body: string, matchId: string, type: string }) {
-  try {
-    await firestore.collection('notifications').add({
-      ...notif,
-      timestamp: new Date().toISOString(),
-      read: false,
-      userId: 'global'
-    });
-  } catch (err) {
-    console.error("[Notifications] Error saving notification:", err);
-  }
-}
-
-app.use(cors());
-app.use(express.json());
-
-// API Routes
-app.get("/api/health", async (req, res) => {
-  await checkMatchUpdates();
-  res.json({ status: "ok", updates: "triggered" });
-});
-
-// [Rest of your API routes here... I will keep them as they were but attached to the global 'app']
-// I'll re-add the matches, standings, highlights routes now.
-
+// 1. Matches Endpoint (Real-time from ESPN)
 app.get("/api/matches", async (req, res) => {
-  // Existing matches logic...
   try {
-    const date = req.query.date as string;
-    const tsdbKey = process.env.THESPORTSDB_API_KEY || 'f874d83052794e869b7dedb5d39ee793';
-    let allMatches: any[] = [];
-    const espnLeagues = Object.keys(espnLeagueMap);
+    const { date } = req.query;
     const dateParam = date ? `&dates=${date}` : '';
-    const espnPromises = espnLeagues.map(async (league) => {
-        const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/scoreboard?limit=50${dateParam}`;
+    const leagues = Object.keys(LEAGUE_MAP);
+    
+    const promises = leagues.map(async (league) => {
+      try {
+        const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/scoreboard?limit=100${dateParam}`;
         const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json() as any;
-          return (data.events || []).map((event: any) => {
-            const homeTeam = event.competitions[0].competitors.find((c: any) => c.homeAway === 'home');
-            const awayTeam = event.competitions[0].competitors.find((c: any) => c.homeAway === 'away');
-            const statusState = event.status.type.state;
-            const status = statusState === 'in' ? 'live' : (statusState === 'post' ? 'finished' : 'upcoming');
-            return {
-              id: `espn-${event.id}`,
-              league: espnLeagueMap[league] || 'دوري غير معروف',
-              homeTeam: { id: homeTeam.team.id, name: homeTeam.team.displayName, logo: homeTeam.team.logo },
-              awayTeam: { id: awayTeam.team.id, name: awayTeam.team.displayName, logo: awayTeam.team.logo },
-              homeScore: parseInt(homeTeam.score) || 0,
-              awayScore: parseInt(awayTeam.score) || 0,
-              time: event.status.type.shortDetail || '00:00',
-              status: status,
-              date: event.date.split('T')[0]
-            };
-          });
-        }
-        return [];
+        if (!response.ok) return [];
+        const data = await response.json() as any;
+        
+        return (data.events || []).map((event: any) => {
+          const comp = event.competitions[0];
+          const home = comp.competitors.find((c: any) => c.homeAway === 'home');
+          const away = comp.competitors.find((c: any) => c.homeAway === 'away');
+          
+          return {
+            id: event.id,
+            league: LEAGUE_MAP[league],
+            homeTeam: { id: home.team.id, name: home.team.displayName, logo: home.team.logo, color: 'bg-white' },
+            awayTeam: { id: away.team.id, name: away.team.displayName, logo: away.team.logo, color: 'bg-white' },
+            homeScore: parseInt(home.score) || 0,
+            awayScore: parseInt(away.score) || 0,
+            status: event.status.type.state === 'in' ? 'live' : (event.status.type.state === 'post' ? 'finished' : 'upcoming'),
+            time: event.status.type.shortDetail,
+            date: event.date.split('T')[0],
+            venue: comp.venue?.fullName
+          };
+        });
+      } catch { return []; }
     });
-    const results = await Promise.all(espnPromises);
+
+    const results = await Promise.all(promises);
     res.json(results.flat());
-  } catch (error) { res.status(500).json({ error: "Failed" }); }
+  } catch (error) { res.status(500).json([]); }
 });
 
-app.get("/api/standings", async (req, res) => {
-  const { league } = req.query;
-  const espnLeagueMapLocal: Record<string, string> = {
-    'الدوري الإنجليزي الممتاز': 'eng.1',
-    'الدوري الإسباني': 'esp.1',
-    'الدوري الإيطالي': 'ita.1',
-    'الدوري الألماني': 'ger.1',
-    'الدوري الفرنسي': 'fra.1',
-    'دوري أبطال أوروبا': 'uefa.champions'
-  };
-  const espnId = espnLeagueMapLocal[league as string] || 'eng.1';
+// 2. Match Details (Lineups, Stats, Timeline)
+app.get("/api/matches/:id/details", async (req, res) => {
   try {
-    const response = await fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnId}/standings`);
-    const data = await response.json();
-    const raw = data.standings?.entries || data.children?.[0]?.standings?.entries || [];
-    const standings = raw.map((entry: any) => ({
-      team: { displayName: entry.team.displayName, logos: entry.team.logos },
-      stats: entry.stats.map((s: any) => ({ name: s.name, value: s.value }))
+    const { id } = req.params;
+    // We try to find the league for this match by checking scoreboard or just using a generic soccer summary
+    // ESPN summary usually works with just the event ID
+    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/all/summary?event=${id}`;
+    const response = await fetch(url);
+    const data = await response.json() as any;
+
+    const comp = data.header?.competitions?.[0];
+    const statsRaw = data.statistics || [];
+    
+    // Extract Stats
+    const stats = {
+      possession: [50, 50],
+      shots: [0, 0],
+      shotsOnTarget: [0, 0],
+      fouls: [0, 0],
+      corners: [0, 0]
+    };
+
+    if (statsRaw.length > 0) {
+        const homeStats = statsRaw[0].statistics;
+        const awayStats = statsRaw[1].statistics;
+        const findStat = (list: any[], name: string) => parseInt(list.find((s: any) => s.name === name)?.displayValue) || 0;
+        
+        stats.possession = [findStat(homeStats, 'possessionPercentage'), findStat(awayStats, 'possessionPercentage')];
+        stats.shots = [findStat(homeStats, 'totalShots'), findStat(awayStats, 'totalShots')];
+        stats.shotsOnTarget = [findStat(homeStats, 'shotsOnTarget'), findStat(awayStats, 'shotsOnTarget')];
+        stats.fouls = [findStat(homeStats, 'foulsCommitted'), findStat(awayStats, 'foulsCommitted')];
+        stats.corners = [findStat(homeStats, 'cornerKicks'), findStat(awayStats, 'cornerKicks')];
+    }
+
+    // Extract Events
+    const events = (data.keyEvents || []).map((e: any) => ({
+      id: e.id,
+      minute: e.clock?.displayValue,
+      type: e.type?.text?.toLowerCase().includes('goal') ? 'goal' : 'commentary',
+      description: e.text,
+      playerName: e.participants?.[0]?.athlete?.displayName
     }));
-    res.json({ standings, isGrouped: false });
-  } catch (e) { res.json({ standings: [] }); }
+
+    res.json({ stats, events });
+  } catch (error) { res.json({ events: [] }); }
 });
 
+// 3. Standings
+app.get("/api/standings", async (req, res) => {
+  try {
+    const { league } = req.query;
+    const revMap: Record<string, string> = Object.fromEntries(Object.entries(LEAGUE_MAP).map(([k, v]) => [v, k]));
+    const leagueId = revMap[league as string] || 'eng.1';
+    
+    const response = await fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${leagueId}/standings`);
+    const data = await response.json() as any;
+    const entries = data.standings?.entries || data.children?.[0]?.standings?.entries || [];
+    
+    const standings = entries.map((e: any) => ({
+      team: { displayName: e.team.displayName, logos: e.team.logos },
+      stats: e.stats.map((s: any) => ({ name: s.name, value: s.value }))
+    }));
+    
+    res.json({ standings, isGrouped: false });
+  } catch { res.json({ standings: [] }); }
+});
+
+// 4. Highlights (Real Search)
 app.get("/api/highlights", async (req, res) => {
   try {
-    const league = req.query.league as string;
-    const query = `ملخص أهداف ${league || 'اليوم'} beIN SPORTS`;
+    const { league } = req.query;
+    const query = `ملخص أهداف ${league || 'مباريات اليوم'} beIN SPORTS`;
     const r = await yts(query);
-    res.json(r.videos.slice(0, 10).map(v => ({
-      id: v.videoId, title: v.title, thumbnail: v.thumbnail, duration: v.timestamp, channel: v.author.name, videoUrl: `https://www.youtube.com/embed/${v.videoId}`
+    res.json(r.videos.slice(0, 15).map(v => ({
+      id: v.videoId,
+      title: v.title,
+      thumbnail: v.thumbnail,
+      duration: v.timestamp,
+      views: v.views.toLocaleString(),
+      videoUrl: `https://www.youtube.com/embed/${v.videoId}`,
+      channel: v.author.name
     })));
-  } catch (e) { res.json([]); }
+  } catch { res.json([]); }
 });
 
+// 5. Transfers (AI Powered)
 app.get("/api/transfers", async (req, res) => {
-  console.log("[Transfers] Request received");
-  try {
-    const parser = new Parser();
-    let titles = "";
     try {
+      const parser = new Parser();
       const rssUrl = 'https://news.google.com/rss/search?q=%D8%A7%D9%86%D8%AA%D9%82%D8%A7%D9%84%D8%A7%D8%AA+%D9%83%D8%B1%D8%A9+%D8%A7%D9%84%D9%82%D8%AF%D9%85+%D8%B1%D8%B3%D9%85%D9%8A%D8%A7&hl=ar&gl=EG&ceid=EG:ar';
-      const rssResponse = await fetch(rssUrl);
-      if (rssResponse.ok) {
-        const xml = await rssResponse.text();
-        const feed = await parser.parseString(xml);
-        titles = feed.items.slice(0, 15).map(item => item.title).join('\n');
-      }
-    } catch (rssError) { console.error("[Transfers] RSS error:", rssError); }
-    
-    if (!titles) return res.json([]);
+      const rssRes = await fetch(rssUrl);
+      const xml = await rssRes.text();
+      const feed = await parser.parseString(xml);
+      const titles = feed.items.slice(0, 10).map(i => i.title).join('\n');
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.json([]);
-
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: `Extract football transfer deals from these news titles. Return a JSON array. Titles: ${titles}`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              id: { type: Type.STRING },
-              playerName: { type: Type.STRING },
-              position: { type: Type.STRING },
-              fromTeam: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, color: { type: Type.STRING } } },
-              toTeam: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, color: { type: Type.STRING } } },
-              fee: { type: Type.STRING },
-              date: { type: Type.STRING },
-              type: { type: Type.STRING },
-              playerImage: { type: Type.STRING }
-            }
-          }
-        }
-      }
-    });
-    res.json(JSON.parse(response.text || '[]'));
-  } catch (error) { res.json([]); }
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const prompt = `Extract football transfers as JSON array. Items: {playerName, fromTeam, toTeam, fee, date}. News: ${titles}`;
+      const result = await model.generateContent(prompt);
+      res.json(JSON.parse(result.response.text() || '[]'));
+    } catch { res.json([]); }
 });
-
-// Vercel handles static files automatically via the project settings and vercel.json rewrites.
-
-if (process.env.VERCEL !== "1") {
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[Server] Running on http://0.0.0.0:${PORT}`);
-    checkMatchUpdates();
-    setInterval(checkMatchUpdates, 60000);
-  });
-}
 
 export default app;
