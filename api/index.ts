@@ -8,7 +8,7 @@ import * as cheerio from "cheerio";
 import { GoogleGenAI, Type } from "@google/genai";
 import yts from 'yt-search';
 import admin from "firebase-admin";
-import firebaseConfig from './firebase-applet-config.json';
+import firebaseConfig from '../firebase-applet-config.json';
 
 // Global error handlers
 process.on('unhandledRejection', (reason, promise) => {
