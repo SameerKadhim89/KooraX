@@ -18,10 +18,15 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file('koorax-release-key.jks')
-            storePassword 'koorax2026'
-            keyAlias 'koorax-alias'
-            keyPassword 'koorax2026'
+            def props = new Properties()
+            def propFile = file('release-signing.properties')
+            if (propFile.exists()) {
+                props.load(new FileInputStream(propFile))
+                storeFile file(props['storeFile'])
+                storePassword props['storePassword']
+                keyAlias props['keyAlias']
+                keyPassword props['keyPassword']
+            }
         }
     }
     buildTypes {

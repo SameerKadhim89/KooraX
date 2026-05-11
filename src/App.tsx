@@ -17,7 +17,11 @@ import { showInterstitial, initializeAdMob } from './services/admob';
 import { fetchLiveMatches, fetchLiveStandings, fetchLiveHighlights } from './services/api';
 import { Capacitor } from '@capacitor/core';
 
-export const API_BASE = import.meta.env.VITE_API_URL || (Capacitor.isNativePlatform() ? 'http://192.168.100.9:3000' : '');
+// For professional deployment, replace this with your actual backend URL (e.g. Render, Railway, etc.)
+const PRODUCTION_BACKEND_URL = 'https://koorax-backend.render.com'; // Replace with real one when deployed
+
+export const API_BASE = import.meta.env.VITE_API_URL || 
+  (Capacitor.isNativePlatform() ? PRODUCTION_BACKEND_URL : window.location.origin);
 
 type Tab = 'matches' | 'highlights' | 'transfers' | 'standings';
 
@@ -1098,10 +1102,8 @@ function MatchesView({
     if (dateOffset === 0) {
       loadMatches(3, getFormattedDate(0));
       interval = setInterval(() => loadMatches(3, getFormattedDate(0)), 30000);
-    } else if (dateOffset === 'upcoming') {
-      loadMatches(3);
     } else {
-      loadMatches(3, getFormattedDate(dateOffset as number));
+      loadMatches(3, getFormattedDate(dateOffset));
     }
 
     return () => {
@@ -1648,7 +1650,7 @@ function HighlightsView() {
     const fetchHighlights = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchLiveHighlights();
+        const data = await fetchLiveHighlights(activeLeagueFilter);
         if (data && data.length > 0) {
           setHighlights(data);
         }

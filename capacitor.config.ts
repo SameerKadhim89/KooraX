@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'KooraX',
   webDir: 'dist',
   server: {
-    url: 'https://bright-pithivier-bb572c.netlify.app',
+    androidScheme: 'https',
     cleartext: true
   }
 };
