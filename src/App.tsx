@@ -22,7 +22,7 @@ import { Capacitor } from '@capacitor/core';
 const PRODUCTION_BACKEND_URL = 'https://koora-x.vercel.app'; 
 
 export const API_BASE = import.meta.env.VITE_API_URL || 
-  (Capacitor.isNativePlatform() ? PRODUCTION_BACKEND_URL : window.location.origin);
+  (Capacitor.isNativePlatform() ? PRODUCTION_BACKEND_URL : ''); // Use relative paths on web
 
 type Tab = 'matches' | 'highlights' | 'transfers' | 'standings';
 
@@ -950,8 +950,9 @@ function MatchesView({
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [matchEvents, setMatchEvents] = useState<MatchEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
-  const [matches, setMatches] = useState<Match[]>(matchesData);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [isLoadingMatches, setIsLoadingMatches] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [followedMatches, setFollowedMatches] = useState<string[]>([]);
   const [dateOffset, setDateOffset] = useState<number>(0); // -1: Yesterday, 0: Today, 1: Tomorrow
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
@@ -1068,9 +1069,9 @@ function MatchesView({
         if (!isNetworkError) console.log(`Retrying match fetch... (${retries} attempts left)`);
         setTimeout(() => loadMatches(retries - 1, dateStr), 2000);
       } else {
-        if (!isNetworkError) {
-          console.warn("Failed to fetch real matches after retries, using fallback data");
-        }
+        setFetchError("فشل جلب البيانات الحقيقية. تأكد من إعدادات الخادم.");
+        // Only use fallback if we absolutely have to, but let's see the error first
+        // setMatches(matchesData); 
       }
     } finally {
       setIsLoadingMatches(false);
