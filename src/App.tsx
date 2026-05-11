@@ -18,7 +18,8 @@ import { fetchLiveMatches, fetchLiveStandings, fetchLiveHighlights } from './ser
 import { Capacitor } from '@capacitor/core';
 
 // For professional deployment, replace this with your actual backend URL (e.g. Render, Railway, etc.)
-const PRODUCTION_BACKEND_URL = 'https://koorax-backend.render.com'; // Replace with real one when deployed
+// For professional deployment, replace this with your actual backend URL (Vercel)
+const PRODUCTION_BACKEND_URL = 'https://koora-x.vercel.app'; 
 
 export const API_BASE = import.meta.env.VITE_API_URL || 
   (Capacitor.isNativePlatform() ? PRODUCTION_BACKEND_URL : window.location.origin);

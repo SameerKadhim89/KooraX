@@ -193,7 +193,52 @@ app.get("/api/highlights", async (req, res) => {
 });
 
 app.get("/api/transfers", async (req, res) => {
-  res.json([]); // Placeholder for brevity, you can re-add Gemini logic
+  console.log("[Transfers] Request received");
+  try {
+    const parser = new Parser();
+    let titles = "";
+    try {
+      const rssUrl = 'https://news.google.com/rss/search?q=%D8%A7%D9%86%D8%AA%D9%82%D8%A7%D9%84%D8%A7%D8%AA+%D9%83%D8%B1%D8%A9+%D8%A7%D9%84%D9%82%D8%AF%D9%85+%D8%B1%D8%B3%D9%85%D9%8A%D8%A7&hl=ar&gl=EG&ceid=EG:ar';
+      const rssResponse = await fetch(rssUrl);
+      if (rssResponse.ok) {
+        const xml = await rssResponse.text();
+        const feed = await parser.parseString(xml);
+        titles = feed.items.slice(0, 15).map(item => item.title).join('\n');
+      }
+    } catch (rssError) { console.error("[Transfers] RSS error:", rssError); }
+    
+    if (!titles) return res.json([]);
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return res.json([]);
+
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: "gemini-1.5-flash",
+      contents: `Extract football transfer deals from these news titles. Return a JSON array. Titles: ${titles}`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING },
+              playerName: { type: Type.STRING },
+              position: { type: Type.STRING },
+              fromTeam: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, color: { type: Type.STRING } } },
+              toTeam: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, color: { type: Type.STRING } } },
+              fee: { type: Type.STRING },
+              date: { type: Type.STRING },
+              type: { type: Type.STRING },
+              playerImage: { type: Type.STRING }
+            }
+          }
+        }
+      }
+    });
+    res.json(JSON.parse(response.text || '[]'));
+  } catch (error) { res.json([]); }
 });
 
 // Vite/Static handling
