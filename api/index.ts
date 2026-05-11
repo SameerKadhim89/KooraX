@@ -4,7 +4,7 @@ import cors from "cors";
 import path from "path";
 import Parser from "rss-parser";
 import * as cheerio from "cheerio";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import yts from 'yt-search';
 import admin from "firebase-admin";
 import firebaseConfig from '../firebase-applet-config.json';
@@ -179,11 +179,11 @@ app.get("/api/transfers", async (req, res) => {
       const feed = await parser.parseString(xml);
       const titles = feed.items.slice(0, 10).map(i => i.title).join('\n');
 
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
       const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const prompt = `Extract football transfers as JSON array. Items: {playerName, fromTeam, toTeam, fee, date}. News: ${titles}`;
+      const prompt = `Extract football transfers as JSON array. Return only the JSON. Items: {playerName, fromTeam, toTeam, fee, date}. News: ${titles}`;
       const result = await model.generateContent(prompt);
-      res.json(JSON.parse(result.response.text() || '[]'));
+      res.json(JSON.parse(result.response.text().replace(/```json|```/g, '') || '[]'));
     } catch { res.json([]); }
 });
 
