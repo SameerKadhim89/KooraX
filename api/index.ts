@@ -241,18 +241,7 @@ app.get("/api/transfers", async (req, res) => {
   } catch (error) { res.json([]); }
 });
 
-// Vite/Static handling
-if (process.env.NODE_ENV === "production") {
-  const distPath = path.join(process.cwd(), 'dist');
-  app.use(express.static(distPath));
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(distPath, 'index.html'));
-    }
-  });
-} else {
-  // Local dev logic if needed
-}
+// Vercel handles static files automatically via the project settings and vercel.json rewrites.
 
 if (process.env.VERCEL !== "1") {
   app.listen(PORT, "0.0.0.0", () => {

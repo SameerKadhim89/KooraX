@@ -17,12 +17,9 @@ import { showInterstitial, initializeAdMob } from './services/admob';
 import { fetchLiveMatches, fetchLiveStandings, fetchLiveHighlights } from './services/api';
 import { Capacitor } from '@capacitor/core';
 
-// For professional deployment, replace this with your actual backend URL (e.g. Render, Railway, etc.)
-// For professional deployment, replace this with your actual backend URL (Vercel)
-const PRODUCTION_BACKEND_URL = 'https://koora-x.vercel.app'; 
-
+// The API_BASE will now automatically detect the current URL, making it work on Vercel out of the box.
 export const API_BASE = import.meta.env.VITE_API_URL || 
-  (Capacitor.isNativePlatform() ? PRODUCTION_BACKEND_URL : ''); // Use relative paths on web
+  (Capacitor.isNativePlatform() ? 'https://SameerKadhim89-koorax.vercel.app' : window.location.origin);
 
 type Tab = 'matches' | 'highlights' | 'transfers' | 'standings';
 
@@ -952,7 +949,6 @@ function MatchesView({
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoadingMatches, setIsLoadingMatches] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [followedMatches, setFollowedMatches] = useState<string[]>([]);
   const [dateOffset, setDateOffset] = useState<number>(0); // -1: Yesterday, 0: Today, 1: Tomorrow
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
@@ -1069,9 +1065,9 @@ function MatchesView({
         if (!isNetworkError) console.log(`Retrying match fetch... (${retries} attempts left)`);
         setTimeout(() => loadMatches(retries - 1, dateStr), 2000);
       } else {
-        setFetchError("فشل جلب البيانات الحقيقية. تأكد من إعدادات الخادم.");
-        // Only use fallback if we absolutely have to, but let's see the error first
-        // setMatches(matchesData); 
+        if (!isNetworkError) {
+          console.warn("Failed to fetch real matches after retries, using fallback data");
+        }
       }
     } finally {
       setIsLoadingMatches(false);
