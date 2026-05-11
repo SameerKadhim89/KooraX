@@ -142,19 +142,36 @@ app.get('/api/standings', async (req, res) => {
 app.get('/api/highlights', async (req, res) => {
   try {
     const { league } = req.query;
-    const query = `ملخص أهداف ${league || 'كرة القدم اليوم'} beIN SPORTS 2025`;
+    const leagueLabel = (league && league !== 'الكل') ? String(league) : 'كرة القدم';
+    const query = `ملخص أهداف ${leagueLabel} beIN SPORTS 2025`;
     const r = await yts(query);
-    const videos = r.videos.slice(0, 15).map(v => ({
-      id:        v.videoId,
-      title:     v.title,
-      thumbnail: v.thumbnail,
-      duration:  v.timestamp,
-      views:     v.views?.toLocaleString('ar') || '0',
-      videoUrl:  `https://www.youtube.com/embed/${v.videoId}`,
-      channel:   v.author?.name || '',
-    }));
+    const videos = r.videos.slice(0, 15).map(v => {
+      // Calculate timeAgoMinutes from the video age string
+      let timeAgoMinutes = 99999;
+      const age = v.ago || '';
+      if (age.includes('minute')) timeAgoMinutes = parseInt(age) || 30;
+      else if (age.includes('hour'))  timeAgoMinutes = (parseInt(age) || 1) * 60;
+      else if (age.includes('day'))   timeAgoMinutes = (parseInt(age) || 1) * 1440;
+      else if (age.includes('week'))  timeAgoMinutes = (parseInt(age) || 1) * 10080;
+
+      return {
+        id:              v.videoId,
+        title:           v.title,
+        thumbnail:       v.thumbnail,
+        duration:        v.timestamp || '0:00',
+        date:            age || 'منذ فترة',
+        timeAgoMinutes:  timeAgoMinutes,
+        views:           v.views ? v.views.toLocaleString('ar') : '0',
+        viewCount:       v.views || 0,
+        league:          leagueLabel,
+        videoUrl:        `https://www.youtube.com/embed/${v.videoId}`,
+        channel:         v.author?.name || '',
+        scorers:         [],
+      };
+    });
     res.json(videos);
-  } catch {
+  } catch (err) {
+    console.error('[/api/highlights]', err);
     res.json([]);
   }
 });

@@ -1629,7 +1629,7 @@ function StatBar({ label, homeValue, awayValue, suffix = '' }: { label: string, 
 function HighlightsView() {
   const [expandedHighlightId, setExpandedHighlightId] = useState<string | null>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
-  const [highlights, setHighlights] = useState<Highlight[]>(highlightsData);
+  const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState((window as any).highlightFilter || '');
   const [activeLeagueFilter, setActiveLeagueFilter] = useState((window as any).highlightLeague || 'الكل');
@@ -1680,10 +1680,11 @@ function HighlightsView() {
 
   const filteredHighlights = highlights
     .filter(h => {
+      if (!h || !h.title) return false;
       const matchesSearch = h.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesLeague = activeLeagueFilter === 'الكل' || h.league === activeLeagueFilter;
+      const matchesLeague = activeLeagueFilter === 'الكل' || (h.league || '').includes(activeLeagueFilter) || activeLeagueFilter.includes(h.league || '');
       const timeRangeMap: Record<string, number> = { '24h': 1440, '3d': 4320, '7d': 10080, 'all': Number.MAX_SAFE_INTEGER };
-      const matchesTimeRange = (h.timeAgoMinutes || 0) <= timeRangeMap[timeRangeFilter];
+      const matchesTimeRange = (h.timeAgoMinutes ?? Number.MAX_SAFE_INTEGER) <= timeRangeMap[timeRangeFilter];
       return matchesSearch && matchesLeague && matchesTimeRange;
     })
     .sort((a, b) => {
