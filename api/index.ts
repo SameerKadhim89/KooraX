@@ -145,7 +145,7 @@ app.get('/api/highlights', async (req, res) => {
     const leagueLabel = (league && league !== 'الكل') ? String(league) : 'كرة القدم';
     const query = `ملخص أهداف ${leagueLabel} beIN SPORTS 2025`;
     const r = await yts(query);
-    const videos = r.videos.slice(0, 15).map(v => {
+    const videos = r.videos.slice(0, 15).map((v: { videoId: string; title: string; thumbnail: string; timestamp?: string; ago?: string; views?: number; author?: { name: string } }) => {
       // Calculate timeAgoMinutes from the video age string
       let timeAgoMinutes = 99999;
       const age = v.ago || '';

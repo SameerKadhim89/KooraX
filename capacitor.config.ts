@@ -7,6 +7,11 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     cleartext: true
+  },
+  plugins: {
+    AdMob: {
+      appId: 'ca-app-pub-2757007936976677~8210759591' // Replace with your actual AdMob App ID
+    }
   }
 };
 
